@@ -9,8 +9,8 @@ const RouteSelector = ({ selectedTimeFrame, onSelect }) => {
       aria-label="Select time frame"
     >
       <option value="">Select from below</option>
-      <option value="today">Today</option>
-      <option value="yesterday">Yesterday</option>
+      <option value="today">Today (Delhi to Mumbai)</option>
+      <option value="yesterday">Yesterday (Delhi to Kanpur)</option>
     </select>
   );
 };
