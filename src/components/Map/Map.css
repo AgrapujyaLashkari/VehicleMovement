@@ -1,4 +1,4 @@
-.map-container {
+/* .map-container {
   height: 500px;
   width: 100%;
 }
@@ -67,4 +67,46 @@
 
 .speed-slider {
   width: 100px;
+} */
+
+
+
+.map-container {
+  height: 500px;
+  width: 100%;
 }
+
+.controls-container {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.time-frame-select,
+.start-simulation-button {
+  margin: 10px;
+  padding: 10px;
+  font-size: 16px;
+}
+
+.simulation-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.progress-slider,
+.speed-slider {
+  width: 80%;
+  margin: 10px 0;
+}
+
+.play-pause-button,
+.restart-button {
+  margin: 5px;
+  padding: 10px 20px;
+  font-size: 16px;
+}
+

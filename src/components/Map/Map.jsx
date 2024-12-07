@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { MapContainer, TileLayer, Marker, Polyline } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Polyline, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -12,32 +12,60 @@ const carIcon = new L.Icon({
   iconAnchor: [16, 16],
 });
 
-const generateRouteCoordinates = (timeFrame) => {
-  const baseCoordinates = [
-    [37.7749, -122.4194],
-    [37.7757, -122.4218],
-    [37.7768, -122.4239],
-    [37.778, -122.4263],
-    [37.7792, -122.4287],
-    [37.7804, -122.431],
-    [37.7816, -122.4334],
-    [37.7828, -122.4358],
-    [37.784, -122.4382],
-    [37.7852, -122.4406],
-  ];
+const delhiToMumbaiCoordinates = [
+  [28.6139, 77.2090], // Delhi
+  [28.4595, 77.0266], // Gurugram
+  [28.4089, 77.3178], // Faridabad
+  [27.1767, 78.0081], // Agra
+  [26.8467, 80.9462], // Lucknow
+  [25.4358, 81.8463], // Prayagraj
+  [23.2599, 77.4126], // Bhopal
+  [21.1458, 79.0882], // Nagpur
+  [19.0760, 72.8777], // Mumbai
+];
 
+const delhiToKanpurCoordinates = [
+  [28.6139, 77.2090], // Delhi
+  [28.4595, 77.0266], // Gurugram
+  [28.4089, 77.3178], // Faridabad
+  [27.1767, 78.0081], // Agra
+  [27.5706, 80.1988], // Kannauj
+  [26.4499, 80.3319], // Kanpur
+];
+
+const generateRouteCoordinates = (timeFrame) => {
   switch (timeFrame) {
-    case "lastWeek":
-      return baseCoordinates.map(([lat, lng]) => [lat - 0.01, lng - 0.01]);
-    case "lastMonth":
-      return baseCoordinates.map(([lat, lng]) => [lat - 0.02, lng - 0.02]);
+    case "yesterday":
+      return delhiToMumbaiCoordinates;
+    case "dayBeforeYesterday":
+      return delhiToKanpurCoordinates;
     default:
-      return baseCoordinates;
+      return [];
   }
 };
 
+function LocationMarker({ showCurrentLocation }) {
+  const [position, setPosition] = useState(null);
+  const map = useMap();
+
+  useEffect(() => {
+    if (showCurrentLocation) {
+      map.locate().on("locationfound", function (e) {
+        setPosition(e.latlng);
+        map.flyTo(e.latlng, map.getZoom());
+      });
+    } else {
+      setPosition(null);
+    }
+  }, [map, showCurrentLocation]);
+
+  return position === null || !showCurrentLocation ? null : (
+    <Marker position={position} icon={carIcon} />
+  );
+}
+
 const Map = () => {
-  const [currentPosition, setCurrentPosition] = useState([37.7749, -122.4194]);
+  const [currentPosition, setCurrentPosition] = useState([20.5937, 78.9629]); // Center of India as default
   const [routeIndex, setRouteIndex] = useState(0);
   const [isMoving, setIsMoving] = useState(false);
   const [showControls, setShowControls] = useState(false);
@@ -45,6 +73,7 @@ const Map = () => {
   const [routeCoordinates, setRouteCoordinates] = useState([]);
   const [selectedTimeFrame, setSelectedTimeFrame] = useState("");
   const [progress, setProgress] = useState(0);
+  const [showCurrentLocation, setShowCurrentLocation] = useState(true);
 
   const handleTimeFrameSelect = (event) => {
     setSelectedTimeFrame(event.target.value);
@@ -52,6 +81,7 @@ const Map = () => {
     setRouteCoordinates(newRouteCoordinates);
     setCurrentPosition(newRouteCoordinates[0]);
     setRouteIndex(0);
+    setShowCurrentLocation(false);
   };
 
   const startSimulation = () => {
@@ -62,10 +92,14 @@ const Map = () => {
   const handlePlay = () => setIsMoving(true);
   const handlePause = () => setIsMoving(false);
   const handleRestart = () => {
+    setShowControls(false);
+    setIsMoving(false);
+    setSelectedTimeFrame("");
+    setRouteCoordinates([]);
+    setCurrentPosition([20.5937, 78.9629]); // Reset to center of India
     setRouteIndex(0);
-    setCurrentPosition(routeCoordinates[0]);
     setProgress(0);
-    setIsMoving(true);
+    setShowCurrentLocation(true);
   };
   const handleSpeedChange = (event) =>
     setSimulationSpeed(Number(event.target.value));
@@ -90,14 +124,15 @@ const Map = () => {
   return (
     <div>
       <MapContainer
-        center={routeCoordinates[0] || [37.7749, -122.4194]}
-        zoom={14}
+        center={currentPosition}
+        zoom={5}
         className="map-container"
       >
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          // attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+          attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
         />
+        <LocationMarker showCurrentLocation={showCurrentLocation} />
         {routeCoordinates.length > 0 && (
           <>
             <Polyline positions={routeCoordinates} color="red" />
@@ -106,27 +141,7 @@ const Map = () => {
         )}
       </MapContainer>
       <div className="controls-container">
-        {!showControls ? (
-          <>
-            <select
-              value={selectedTimeFrame}
-              onChange={handleTimeFrameSelect}
-              className="time-frame-select"
-            >
-              <option value="">Select from below</option>
-              <option value="today">Today</option>
-              <option value="lastWeek">Last Week</option>
-              <option value="lastMonth">Last Month</option>
-            </select>
-            <button
-              onClick={startSimulation}
-              className="start-simulation-button"
-              disabled={!selectedTimeFrame}
-            >
-              Start Simulation
-            </button>
-          </>
-        ) : (
+        {showControls ? (
           <div className="simulation-controls">
             <input
               type="range"
@@ -142,6 +157,7 @@ const Map = () => {
                 setProgress(Number(e.target.value));
               }}
               className="progress-slider"
+              aria-label="Simulation progress"
             />
             <button
               onClick={isMoving ? handlePause : handlePlay}
@@ -159,8 +175,29 @@ const Map = () => {
               value={simulationSpeed}
               onChange={handleSpeedChange}
               className="speed-slider"
+              aria-label="Simulation speed"
             />
           </div>
+        ) : (
+          <>
+            <select
+              value={selectedTimeFrame}
+              onChange={handleTimeFrameSelect}
+              className="time-frame-select"
+              aria-label="Select time frame"
+            >
+              <option value="">Select from below</option>
+              <option value="yesterday">yesterday</option>
+              <option value="dayBeforeYesterday">Day Before Yesterday</option>
+            </select>
+            <button
+              onClick={startSimulation}
+              className="start-simulation-button"
+              disabled={!selectedTimeFrame}
+            >
+              Start Simulation
+            </button>
+          </>
         )}
       </div>
     </div>
@@ -168,3 +205,6 @@ const Map = () => {
 };
 
 export default Map;
+
+
+
