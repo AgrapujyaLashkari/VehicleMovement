@@ -35,9 +35,9 @@ const delhiToKanpurCoordinates = [
 
 const generateRouteCoordinates = (timeFrame) => {
   switch (timeFrame) {
-    case "yesterday":
+    case "today":
       return delhiToMumbaiCoordinates;
-    case "dayBeforeYesterday":
+    case "yesterday":
       return delhiToKanpurCoordinates;
     default:
       return [];
@@ -187,8 +187,8 @@ const Map = () => {
               aria-label="Select time frame"
             >
               <option value="">Select from below</option>
-              <option value="yesterday">yesterday</option>
-              <option value="dayBeforeYesterday">Day Before Yesterday</option>
+              <option value="today">Today (Delhi to Mumbai)</option>
+              <option value="yesterday">Yesterday (Delhi to Kanpur)</option>
             </select>
             <button
               onClick={startSimulation}
@@ -205,6 +205,7 @@ const Map = () => {
 };
 
 export default Map;
+
 
 
 
