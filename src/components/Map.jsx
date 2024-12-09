@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { MapContainer, TileLayer, Marker, Polyline, useMap } from "react-leaflet";
-
 import "leaflet/dist/leaflet.css";
 import { carIcon, generateRouteCoordinates } from "../utils/mapUtils";
 
