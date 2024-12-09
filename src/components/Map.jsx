@@ -1,74 +1,12 @@
-
-
-
-
 import React, { useState, useEffect } from "react";
-import { MapContainer, TileLayer, Marker, Polyline, useMap } from "react-leaflet";
-import L from "leaflet";
+import { MapContainer, TileLayer, Marker, Polyline } from "react-leaflet";
+import { LocationMarker } from "./LocationMarker";
+import { SimulationControls } from "./SimulationControls";
+import { carIcon, generateRouteCoordinates } from "../utils/mapUtils";
 import "leaflet/dist/leaflet.css";
-
 import "../styles/Map.css";
 
-const carIcon = new L.Icon({
-  iconUrl:
-    "https://images.vexels.com/media/users/3/154573/isolated/preview/bd08e000a449288c914d851cb9dae110-hatchback-car-top-view-silhouette-by-vexels.png",
-  iconSize: [32, 32],
-  iconAnchor: [16, 16],
-});
-
-const delhiToMumbaiCoordinates = [
-  [28.6139, 77.2090], // Delhi
-  [28.4595, 77.0266], // Gurugram
-  [28.4089, 77.3178], // Faridabad
-  [27.1767, 78.0081], // Agra
-  [26.8467, 80.9462], // Lucknow
-  [25.4358, 81.8463], // Prayagraj
-  [23.2599, 77.4126], // Bhopal
-  [21.1458, 79.0882], // Nagpur
-  [19.0760, 72.8777], // Mumbai
-];
-
-const delhiToKanpurCoordinates = [
-  [28.6139, 77.2090], // Delhi
-  [28.4595, 77.0266], // Gurugram
-  [28.4089, 77.3178], // Faridabad
-  [27.1767, 78.0081], // Agra
-  [27.5706, 80.1988], // Kannauj
-  [26.4499, 80.3319], // Kanpur
-];
-
-const generateRouteCoordinates = (timeFrame) => {
-  switch (timeFrame) {
-    case "today":
-      return delhiToMumbaiCoordinates;
-    case "yesterday":
-      return delhiToKanpurCoordinates;
-    default:
-      return [];
-  }
-};
-
-function LocationMarker({ showCurrentLocation }) {
-  const [position, setPosition] = useState(null);
-  const map = useMap();
-
-  useEffect(() => {
-    if (showCurrentLocation) {
-      map.locate().on("locationfound", function (e) {
-        setPosition(e.latlng);
-        map.flyTo(e.latlng, map.getZoom());
-      });
-    } else {
-      setPosition(null);
-    }
-  }, [map, showCurrentLocation]);
-
-  return position === null || !showCurrentLocation ? null : (
-    <Marker position={position} icon={carIcon} />
-  );
-}
-
-const Map = () => {
+export const Map = () => {
   const [currentPosition, setCurrentPosition] = useState([20.5937, 78.9629]); // Center of India as default
   const [routeIndex, setRouteIndex] = useState(0);
   const [isMoving, setIsMoving] = useState(false);
@@ -105,8 +43,7 @@ const Map = () => {
     setProgress(0);
     setShowCurrentLocation(true);
   };
-  const handleSpeedChange = (event) =>
-    setSimulationSpeed(Number(event.target.value));
+  const handleSpeedChange = (newSpeed) => setSimulationSpeed(newSpeed);
 
   useEffect(() => {
     if (isMoving && routeCoordinates.length > 0) {
@@ -127,11 +64,7 @@ const Map = () => {
 
   return (
     <div>
-      <MapContainer
-        center={currentPosition}
-        zoom={5}
-        className="map-container"
-      >
+      <MapContainer center={currentPosition} zoom={5} className="map-container">
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
@@ -146,42 +79,23 @@ const Map = () => {
       </MapContainer>
       <div className="controls-container">
         {showControls ? (
-          <div className="simulation-controls">
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={progress}
-              onChange={(e) => {
-                const newIndex = Math.floor(
-                  (routeCoordinates.length - 1) * (Number(e.target.value) / 100)
-                );
-                setRouteIndex(newIndex);
-                setCurrentPosition(routeCoordinates[newIndex]);
-                setProgress(Number(e.target.value));
-              }}
-              className="progress-slider"
-              aria-label="Simulation progress"
-            />
-            <button
-              onClick={isMoving ? handlePause : handlePlay}
-              className="play-pause-button"
-            >
-              {isMoving ? "Pause" : "Play"}
-            </button>
-            <button onClick={handleRestart} className="restart-button">
-              Restart
-            </button>
-            <input
-              type="range"
-              min="1"
-              max="10"
-              value={simulationSpeed}
-              onChange={handleSpeedChange}
-              className="speed-slider"
-              aria-label="Simulation speed"
-            />
-          </div>
+          <SimulationControls
+            isMoving={isMoving}
+            progress={progress}
+            simulationSpeed={simulationSpeed}
+            routeCoordinates={routeCoordinates}
+            onProgressChange={(newProgress) => {
+              const newIndex = Math.floor(
+                (routeCoordinates.length - 1) * (newProgress / 100)
+              );
+              setRouteIndex(newIndex);
+              setCurrentPosition(routeCoordinates[newIndex]);
+              setProgress(newProgress);
+            }}
+            onPlayPause={isMoving ? handlePause : handlePlay}
+            onRestart={handleRestart}
+            onSpeedChange={handleSpeedChange}
+          />
         ) : (
           <>
             <select
@@ -208,4 +122,3 @@ const Map = () => {
   );
 };
 
-export default Map;
